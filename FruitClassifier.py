@@ -1,8 +1,11 @@
 # Fruit Classifier using Machine Learning
+from email.mime import image
 import pandas as pd
 import os
 from pathlib import Path
 import sys
+import cv2
+from skimage.feature import local_binary_pattern
 
 
 #load images
@@ -63,25 +66,27 @@ def load_data(folder_paths):
 
 
 if __name__ == "__main__":
-    base_path = "FruitClassification/data/fruits-360_100x100/Training"
-
+    ### data preperation / loading data
+    base_path = "FruitClassification/data/fruits-360_100x100/fruits-360/Training/"
     paths = {
         "apple": [
-            os.path.join(base_path, "data/Apple Red 1/"),
-            os.path.join(base_path, "data/Apple Red 2/"),
-            os.path.join(base_path, "data/Apple Red 3/")
+            os.path.join(base_path, "Apple Red 1/"),
+            os.path.join(base_path, "Apple Red 2/"),
+            os.path.join(base_path, "Apple Red 3/")
         ],
         "banana": [
-            os.path.join(base_path, "data/Banana 1/"),
-            os.path.join(base_path, "data/Banana 3/"),
-            os.path.join(base_path, "data/Banana 4/")
+            os.path.join(base_path, "Banana 1/"),
+            os.path.join(base_path, "Banana 3/"),
+            os.path.join(base_path, "Banana 4/"),
+            os.path.join(base_path, "Banana Lady Finger 1/")
         ]
     }
-
     data = load_data(paths)
-
     if not data.empty:
         print(data.head())
         print(data['label'].value_counts())
     else:
         print("No data loaded.")
+
+
+    ### data processing / feature extraction (HOG, LBP, color histogram, etc. )
