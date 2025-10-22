@@ -63,7 +63,7 @@ def load_data(folder_paths):
 
 
 if __name__ == "__main__":
-    base_path = "FruitClassification\data\fruits-360_100x100\Training"
+    base_path = "FruitClassification/data/fruits-360_100x100/Training"
 
     paths = {
         "apple": [
