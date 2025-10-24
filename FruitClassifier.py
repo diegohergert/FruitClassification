@@ -61,8 +61,11 @@ def load_data(folder_paths):
     data = data.sample(frac=1).reset_index(drop=True)  # Shuffle the data
     return data
 
-
-
+### preprocess images (resize, normalize, etc.)
+'''
+def preprocess_images(data):
+    print("Starting image preprocessing...")
+'''
 
 
 if __name__ == "__main__":
