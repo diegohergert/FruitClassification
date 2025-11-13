@@ -48,7 +48,9 @@ def load_data(folder_paths):
                 all_labels.append(label)
                 label_image_count += 1
         print(f"Loaded {label_image_count} images for label: {label}")
-    if not all_image_paths:
+    if not all_image_paths:   
+
+        
         print("No images were loaded. Please check the provided folder paths.", file=sys.stderr)
         return pd.DataFrame(columns=['image_path', 'label'])
     
@@ -70,12 +72,46 @@ def preprocess_images(data):
 
 if __name__ == "__main__":
     ### data preperation / loading data
-    base_path = "FruitClassification/data/fruits-360_100x100/fruits-360/Training/"
+    base_path = {"data/fruits-360_100x100/fruits-360/Training/", "data/fruits-360_100x100/fruits-360/Test/"}
     paths = {
-        "apple": [
+        "apple_balanced": [
             os.path.join(base_path, "Apple Red 1/"),
             os.path.join(base_path, "Apple Red 2/"),
             os.path.join(base_path, "Apple Red 3/")
+        ],
+        "apple_all": [
+            os.path.join(base_path, "Apple 5/"),
+            os.path.join(base_path, "Apple 6/"),
+            os.path.join(base_path, "Apple 7/"),
+            os.path.join(base_path, "Apple 8/"),
+            os.path.join(base_path, "Apple 9/"), #rotten
+            os.path.join(base_path, "Apple 10/"), #small rot
+            os.path.join(base_path, "Apple 11/"), 
+            os.path.join(base_path, "Apple 12/"),
+            os.path.join(base_path, "Apple 13/"), #rotten
+            os.path.join(base_path, "Apple 14/"),
+            os.path.join(base_path, "Apple 15/"),
+            os.path.join(base_path, "Apple 16/"),
+            os.path.join(base_path, "Apple 17/"), #rotten
+            os.path.join(base_path, "Apple 18/"),
+            os.path.join(base_path, "Apple 19/"),
+            os.path.join(base_path, "Apple Braeburn 1/"),
+            os.path.join(base_path, "Apple Core 1/"), #just core
+            os.path.join(base_path, "Apple Crimson Snow 1/"),
+            os.path.join(base_path, "Apple Golden 1/"),
+            os.path.join(base_path, "Apple Golden 2/"),
+            os.path.join(base_path, "Apple Golden 3/"),
+            os.path.join(base_path, "Apple Granny Smith 1/"),
+            os.path.join(base_path, "Apple hit 1/"), #half smashed
+            os.path.join(base_path, "Apple Pink Lady 1/"),
+            os.path.join(base_path, "Apple Red 1/"),
+            os.path.join(base_path, "Apple Red 2/"),
+            os.path.join(base_path, "Apple Red 3/"),
+            os.path.join(base_path, "Apple Red Delicious 1/"),
+            os.path.join(base_path, "Apple Red Yellow 1/"),
+            os.path.join(base_path, "Apple Red Yellow 2/"),
+            os.path.join(base_path, "Apple Rotten 1/"), #rotten
+            os.path.join(base_path, "Apple worm 1/") #small hole
         ],
         "banana": [
             os.path.join(base_path, "Banana 1/"),
@@ -83,13 +119,12 @@ if __name__ == "__main__":
             os.path.join(base_path, "Banana 4/"),
             os.path.join(base_path, "Banana Lady Finger 1/")
         ]
+
     }
+
     data = load_data(paths)
     if not data.empty:
         print(data.head())
         print(data['label'].value_counts())
     else:
         print("No data loaded.")
-
-
-    ### data processing / feature extraction (HOG, LBP, color histogram, etc. )
