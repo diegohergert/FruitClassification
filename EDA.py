@@ -9,7 +9,7 @@ import umap
 import sys
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
-from sklearn.metrics import silhouette_score, adjusted_rand_index, carlinski_harabasz_score
+from sklearn.metrics import silhouette_score, adjusted_rand_score, calinski_harabasz_score
 from sklearn.preprocessing import MinMaxScaler
 import os
 
@@ -145,8 +145,8 @@ if __name__ == "__main__":
 
                 #evaluation metrics
                 sil_score = silhouette_score(X_data, y_pred)
-                ari = adjusted_rand_index(y_labels.map({'apple':0, 'banana':1}), y_pred)
-                ch_score = carlinski_harabasz_score(X_data, y_pred)
+                ari = adjusted_rand_score(y_labels.map({'apple':0, 'banana':1}), y_pred)
+                ch_score = calinski_harabasz_score(X_data, y_pred)
                 inertia = kmeans.inertia_
 
                 print(f"{feat_name} -> ARI: {ari:.4f}, Silhouette: {sil_score:.4f}")
