@@ -1,5 +1,3 @@
-from sklearnex import patch_sklearn
-patch_sklearn()
 import joblib
 import pandas as pd
 import numpy as np
