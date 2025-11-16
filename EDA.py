@@ -67,10 +67,10 @@ def splitData(data, feature_column):
 
 if __name__ == "__main__":
     FEATURE_SET_PATH = [
-        "params/feature_set_1.joblib",
-        "params/feature_set_2.joblib",
-        "params/feature_set_3.joblib",
-        "params/feature_set_4.joblib"
+        "params/feature_set_5.joblib",
+        "params/feature_set_6.joblib",
+        "params/feature_set_7.joblib",
+        "params/feature_set_8.joblib"
     ]
 
     FEAT_COLUMNS = [

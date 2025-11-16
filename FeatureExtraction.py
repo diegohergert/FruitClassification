@@ -151,35 +151,35 @@ if __name__ == "__main__":
     
     expirement_configs = [
         {
-            "save_path": "params/feature_set_1.joblib",
+            "save_path": "params/feature_set_5.joblib",
             "param_config": {
-                "hsv": {"bins": (8, 8, 8)},
-                "lbp": {"numPoints": 24, "radius": 8, "method": "uniform"},
-                "hog": {"orientations": 9, "pixels_per_cell": (8, 8), "cells_per_block": (2, 2)}
+                "hsv": {"bins": (4, 8, 2)},
+                "lbp": {"numPoints": 24, "radius": 4, "method": "uniform"},
+                "hog": {"orientations": 24, "pixels_per_cell": (8, 8), "cells_per_block": (2, 2)}
             }
         },
         {
-            "save_path": "params/feature_set_2.joblib",
+            "save_path": "params/feature_set_6.joblib",
             "param_config": {
-                "hsv": {"bins": (16, 16, 16)},
-                "lbp": {"numPoints": 32, "radius": 4, "method": "uniform"},
-                "hog": {"orientations": 12, "pixels_per_cell": (4, 4), "cells_per_block": (2, 2)}
+                "hsv": {"bins": (4, 8, 2)},
+                "lbp": {"numPoints": 24, "radius": 4, "method": "uniform"},
+                "hog": {"orientations": 18, "pixels_per_cell": (8, 8), "cells_per_block": (3, 3)}
             }
         },
         {
-            "save_path": "params/feature_set_3.joblib",
+            "save_path": "params/feature_set_7.joblib",
             "param_config": {
-                "hsv": {"bins": (8, 12, 3)},
-                "lbp": {"numPoints": 16, "radius": 4, "method": "uniform"},
-                "hog": {"orientations": 9, "pixels_per_cell": (16, 16), "cells_per_block": (3, 3)}
+                "hsv": {"bins": (4, 8, 2)},
+                "lbp": {"numPoints": 24, "radius": 2, "method": "uniform"},
+                "hog": {"orientations": 18, "pixels_per_cell": (8, 8), "cells_per_block": (2, 2)}
             }
         },
         {
-            "save_path": "params/feature_set_4.joblib",
+            "save_path": "params/feature_set_8.joblib",
             "param_config": {
                 "hsv": {"bins": (4, 8,2)},
-                "lbp": {"numPoints": 24, "radius": 4, "method": "uniform"},
-                "hog": {"orientations": 18, "pixels_per_cell": (8, 8), "cells_per_block": (2, 2)}
+                "lbp": {"numPoints": 24, "radius": 2, "method": "uniform"},
+                "hog": {"orientations": 24, "pixels_per_cell": (8, 8), "cells_per_block": (3, 3)}
             }
         }
     ]
