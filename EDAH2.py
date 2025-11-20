@@ -133,7 +133,7 @@ if __name__ == "__main__":
                     })
 
                 #HDBSCAN clustering
-                hdbscan = HDBSCAN(min_cluster_size=12, gen_min_span_tree=True)
+                hdbscan = HDBSCAN(min_cluster_size=12)
                 y_pred = hdbscan.fit_predict(X_data)
                 n_clusters_found = len(set(y_pred)) - (1 if -1 in y_pred else 0)
                 n_noise_points = np.sum(y_pred == -1)
