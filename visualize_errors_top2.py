@@ -13,7 +13,7 @@ from sklearn.cluster import HDBSCAN, KMeans
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_score
 
 # =============================================================================
-#   USER CONFIGURATION: ENTER YOUR TOP 2 CHOICES HERE
+#   USER CONFIGURATION: ENTER YOUR TOP 2 ERECHOICES H
 # =============================================================================
 
 H1_CONFIGS = [
@@ -43,7 +43,7 @@ H3_CONFIGS = [
 #   GLOBAL SETUP
 # =============================================================================
 
-OUTPUT_DIR = "final_report_images/error_analysis_top2_adjusted/"
+OUTPUT_DIR = "final_report_images/error_analysis_top2_adjusted_againv2/"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 APPLES = [
@@ -52,10 +52,11 @@ APPLES = [
      "Apple 18", "Apple 19", "Apple Braeburn 1", "Apple Crimson Snow 1", 
      "Apple Golden 2", "Apple Golden 3", "Apple Granny Smith 1", 
     "Apple Pink Lady 1", "Apple Red 1", "Apple Red 2", "Apple Red 3", 
-    "Apple Red Delicious 1", "Apple Red Yellow 1", "Apple Red Yellow 2"
+    "Apple Red Delicious 1", "Apple Red Yellow 1"
 ]
 BANANAS = ["Banana 1", "Banana 3", "Banana 4", "Banana Lady Finger 1"]
 #"Apple Golden 1", and "Apple 9" are a bit iffy but kept for now
+#, "Apple Red Yellow 2" is extremely weird looking
 ANOMALIES = ["Apple Core 1", "Apple hit 1", "Apple Rotten 1"] #"Apple 7" "Apple 8" "Apple 13" "Apple 17" are half healthy half not so really hard to classify 
 
 sns.set_theme(style="white")
@@ -108,7 +109,7 @@ def analyze_h1(config):
     
     X = np.array(df[config['feat']].tolist())
     X = MinMaxScaler().fit_transform(X)
-    X_pca = PCA(n_components=2).fit_transform(X)
+    X_pca = PCA(n_components=0.99).fit_transform(X)
     
     kmeans = KMeans(n_clusters=2, random_state=42, n_init=10)
     y_pred = kmeans.fit_predict(X_pca)
@@ -231,7 +232,7 @@ def plot_anomaly_scores(config):
     data = loaded['data']
     
     # Prepare Data
-    healthy = data[data['label'].isin(APPLES)].sample(2000, random_state=42)
+    healthy = data[data['label'].isin(APPLES)].sample(5000, random_state=42)
     anom = data[data['label'].isin(ANOMALIES)]
     df = pd.concat([healthy, anom]).reset_index(drop=True)
     
@@ -253,8 +254,7 @@ def plot_anomaly_scores(config):
         scores = -1 * model.decision_function(X) 
     else:
         # HDBSCAN outlier_scores_
-        import hdbscan
-        model = hdbscan.HDBSCAN(min_cluster_size=5, prediction_data=True)
+        model = HDBSCAN(min_cluster_size=10)
         model.fit(X)
         scores = model.outlier_scores_
 
@@ -264,7 +264,7 @@ def plot_anomaly_scores(config):
     plt.figure(figsize=(10, 6))
     sns.histplot(data=df, x='Anomaly_Score', hue='Type', element="step", stat="density", common_norm=False, palette={'Healthy':'green', 'Anomaly':'red'})
     plt.title(f"Distribution of Anomaly Scores ({config['name']})\n(Less Overlap = Better Separation)")
-    plt.xlabel("Anomaly Score (Higher = More likely to be Rot)")
+    plt.xlabel("Anomaly Score (Lower = More likely to be Rot)")
     plt.savefig(os.path.join(OUTPUT_DIR, f"{config['name']}_Score_Distribution.png"))
     plt.close()
 # =============================================================================
