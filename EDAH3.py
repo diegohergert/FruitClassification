@@ -2,206 +2,295 @@ import joblib
 import pandas as pd
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')  # Stop thread error 
+matplotlib.use('Agg') # Prevent threading errors
 import matplotlib.pyplot as plt
 import seaborn as sns
-import umap
-import sys
 import cv2
 import os
-from sklearn.ensemble import IsolationForest
-from sklearn.cluster import HDBSCAN
-from sklearn.decomposition import PCA
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classification_report
+import sys
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from sklearn.decomposition import PCA
+from sklearn.ensemble import IsolationForest
+from sklearn.svm import OneClassSVM
+from sklearn.cluster import HDBSCAN
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classification_report, roc_auc_score, precision_recall_curve, average_precision_score
 
-# --- CONFIGURATION ---
-Label = { 
-    "apple_species": [
-        "Apple 5", "Apple 8", "Apple 9/",
-        "Apple 10", "Apple 11", "Apple 14",
-        "Apple 15", "Apple 16", "Apple 17", "Apple 18",
-        "Apple Braeburn 1", "Apple Crimson Snow 1",
-        "Apple Pink Lady 1",
-        "Apple Red 1", "Apple Red 2", "Apple Red 3",
-        "Apple Red Delicious 1", "Apple Red Yellow 1", "Apple Red Yellow 2" 
-    ],
-    "apple_anomalies": [
-        "Apple Core 1", "Apple hit 1", "Apple Rotten 1"
-    ]
-}
+# =============================================================================
+#   1. CONFIGURATION & EXPERIMENT SETUP
+# =============================================================================
 
-RESULTS_DIR = "results_h3_pca_test/"
-os.makedirs(RESULTS_DIR, exist_ok=True)
+# The "Strict" Cleaned Lists
+APPLES = [
+    "Apple 5", "Apple 10", "Apple 11", "Apple 14", "Apple 17",  
+    "Apple 18", "Apple Braeburn 1", "Apple Crimson Snow 1", 
+    "Apple Golden 2", "Apple Golden 3", "Apple Granny Smith 1", 
+    "Apple Pink Lady 1", "Apple Red 1", "Apple Red 2", "Apple Red 3", 
+    "Apple Red Delicious 1", "Apple Red Yellow 1"
+]
+ANOMALIES = ["Apple Core 1", "Apple hit 1", "Apple Rotten 1"] 
 
-def get_data_sample(data, feature_column, contamination=0.05, max_samples=20000):
-    """Returns the RAW (Unscaled) X data and y_true labels."""
-    healthy_df = data[data['label'].isin(Label["apple_species"])].copy()
-    anomaly_df = data[data['label'].isin(Label["apple_anomalies"])].copy()
-    
-    n_healthy = min(len(healthy_df), int(max_samples * (1 - contamination)))
-    n_anomalies = int(n_healthy * (contamination / (1 - contamination)))
-    
-    if n_anomalies > len(anomaly_df):
-        n_anomalies = len(anomaly_df)
-    
-    print(f"  Dataset: {n_healthy} Healthy, {n_anomalies} Anomalies")
-    
-    healthy_sample = healthy_df.sample(n=n_healthy, random_state=42)
-    anomaly_sample = anomaly_df.sample(n=n_anomalies, random_state=42)
-    
-    combined_df = pd.concat([healthy_sample, anomaly_sample]).sample(frac=1, random_state=42).reset_index(drop=True)
-    
-    # Return raw numpy array
-    X_raw = np.array(combined_df[feature_column].tolist())
-    y_true = combined_df['label'].apply(lambda x: 1 if x in Label["apple_species"] else -1).values
-    
-    return X_raw, y_true, combined_df
+OUTPUT_DIR = "h3_comprehensive_analysis_v2/"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-def visualize_predictions(y_true, y_pred, df, title_prefix, save_path):
+# DEFINE YOUR EXPERIMENTS HERE
+EXPERIMENTS = [
+    # 1. BASELINE: Isolation Forest with PCA
+    {
+        "id": "Exp1_Baseline",
+        "file": "params/feature_set_1.joblib",
+        "feat": "hog_hsv_features",
+        "scaler": "MinMax",
+        "pca": 0.95, 
+        "model": "IsolationForest"
+    },
+    
+    # 2. Baseline Edited (Set 7)
+    {
+        "id": "Exp2_Baseline_Edited",
+        "file": "params/feature_set_7.joblib",
+        "feat": "hog_hsv_features",
+        "scaler": "MinMax",
+        "pca": 0.95, 
+        "model": "IsolationForest"
+    },
+
+    # 3. HDBSCAN (Set 1)
+    {
+        "id": "Exp3_HDBSCAN",
+        "file": "params/feature_set_1.joblib",
+        "feat": "hog_hsv_features",
+        "scaler": "MinMax",
+        "pca": 0.95,
+        "model": "HDBSCAN"
+    }, 
+
+    # 4. HDBSCAN (Set 7)
+    {
+        "id": "Exp4_HDBSCAN_edited",
+        "file": "params/feature_set_7.joblib",
+        "feat": "hog_hsv_features",
+        "scaler": "MinMax",
+        "pca": 0.95,
+        "model": "HDBSCAN"
+    }
+]
+
+# =============================================================================
+#   2. DATA LOADING & UTILS
+# =============================================================================
+
+def load_and_prep_data(file_path, feature_col, seed=42):
+    if not os.path.exists(file_path):
+        print(f"Error: File {file_path} not found.")
+        return None, None, None
+
+    loaded = joblib.load(file_path)
+    data = loaded['data']
+    
+    # Randomly sample healthy data (Bootstrapping) using the specific SEED
+    # This ensures each "Round" of CV gets a different subset of healthy apples
+    healthy = data[data['label'].isin(APPLES)].sample(10000, random_state=seed)
+    
+    # Take ALL anomalies (or sample a subset if you want to vary that too)
+    # Here we keep anomalies consistent but vary the 'Healthy' background noise
+    anom = data[data['label'].isin(ANOMALIES)].sample(int(len(healthy) * .05), random_state=seed)
+    
+    df = pd.concat([healthy, anom]).reset_index(drop=True)
+    
+    # Labels: 1 = Healthy, -1 = Anomaly (Standard Sklearn notation)
+    y_true = df['label'].apply(lambda x: 1 if x in APPLES else -1).values
+    
+    # Extract Features
+    try:
+        X = np.array(df[feature_col].tolist())
+    except KeyError:
+        print(f"Error: Feature column '{feature_col}' not found.")
+        return None, None, None
+        
+    return X, y_true, df
+
+def save_image_grid(image_paths, title, filename, n=16):
+    images = []
+    count = 0
+    for p in image_paths:
+        if count >= n: break
+        img = cv2.imread(p)
+        if img is not None:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            images.append(img)
+            count += 1
+    
+    if not images: return
+    rows = int(np.ceil(np.sqrt(len(images))))
+    cols = int(np.ceil(len(images) / rows))
+    if rows == 0 or cols == 0: return
+    
+    fig, axes = plt.subplots(rows, cols, figsize=(10, 10))
+    fig.suptitle(title, fontsize=14)
+    if rows == 1 and cols == 1: axes = [axes]
+    else: axes = axes.flat
+
+    for i, ax in enumerate(axes):
+        if i < len(images):
+            ax.imshow(images[i])
+            ax.axis('off')
+        else:
+            ax.axis('off')
+    plt.tight_layout()
+    plt.savefig(os.path.join(OUTPUT_DIR, filename))
+    plt.close()
+
+# =============================================================================
+#   3. VISUALIZATION FUNCTIONS
+# =============================================================================
+
+def plot_score_histogram(df, exp_name):
+    """Plots the distribution of Healthy vs Anomaly scores."""
+    plt.figure(figsize=(10, 6))
+    sns.histplot(data=df, x='Anomaly_Score', hue='Class', element="step", stat="density", common_norm=False, palette={'Healthy':'green', 'Anomaly':'red'})
+    plt.title(f"{exp_name}: Score Distribution\n(Separation = Good, Overlap = Bad)")
+    plt.xlabel("Anomaly Score (Higher = More Likely to be Rot)")
+    plt.savefig(os.path.join(OUTPUT_DIR, f"{exp_name}_Hist.png"))
+    plt.close()
+
+def plot_pr_curve(y_true, scores, exp_name, ap_score):
+    """Plots Precision-Recall Curve."""
+    # y_true is 1/-1. We need binary 0/1 where 1 is the 'Positive' (Anomaly) class
+    y_binary = (y_true == -1).astype(int)
+    
+    precision, recall, _ = precision_recall_curve(y_binary, scores)
+    
+    plt.figure(figsize=(8, 6))
+    plt.plot(recall, precision, marker='.', label=f'AP={ap_score:.3f}')
+    plt.xlabel('Recall (Percent of Rot Caught)')
+    plt.ylabel('Precision (Percent of Alerts that were Real)')
+    plt.title(f"{exp_name}: Precision-Recall Curve")
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(os.path.join(OUTPUT_DIR, f"{exp_name}_PR_Curve.png"))
+    plt.close()
+
+def plot_confusion_matrix(y_true, y_pred, exp_name):
     cm = confusion_matrix(y_true, y_pred, labels=[1, -1])
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["Healthy (1)", "Anomaly (-1)"])
-    plt.figure(figsize=(6, 5))
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["Healthy", "Rot"])
+    plt.figure(figsize=(5, 5))
     disp.plot(cmap='Blues', values_format='d')
-    plt.title(f"{title_prefix} Confusion Matrix")
-    plt.tight_layout()
-    plt.savefig(save_path + "_cm.png")
+    plt.title(f"{exp_name} Confusion Matrix")
+    plt.savefig(os.path.join(OUTPUT_DIR, f"{exp_name}_CM.png"))
     plt.close()
 
-def plot_umap_anomalies(X_data, y_true, y_pred, save_path):
-    if len(X_data) > 5000:
-        idx = np.random.choice(len(X_data), 5000, replace=False)
-        X_viz = X_data[idx]
-        y_t_viz = y_true[idx]
-        y_p_viz = y_pred[idx]
-    else:
-        X_viz = X_data
-        y_t_viz = y_true
-        y_p_viz = y_pred
+# =============================================================================
+#   4. MAIN PIPELINE WITH STABILITY CROSS-VALIDATION
+# =============================================================================
 
-    reducer = umap.UMAP(random_state=42)
-    embedding = reducer.fit_transform(X_viz)
+def run_experiments():
+    print(f"Starting H3 Analysis with Stability Testing. Results will be in: {OUTPUT_DIR}")
+    
+    # Configuration for Cross-Validation
+    N_ROUNDS = 5  # How many times to repeat the experiment
+    SEEDS = [42, 101, 999, 123, 555] # Different random states for each round
+    
+    # Store every single run to calculate stats later
+    raw_results = [] 
+    
+    for exp in EXPERIMENTS:
+        print(f"\n=== Testing Config: {exp['id']} ({N_ROUNDS} Rounds) ===")
+        
+        experiment_scores = {
+            "AUC": [], "AP": [], "F1": [], "Recall": [], "Precision": []
+        }
 
-    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
-    sns.scatterplot(x=embedding[:,0], y=embedding[:,1], hue=y_t_viz, palette={1: 'blue', -1: 'red'}, ax=axes[0], s=15, alpha=0.6)
-    axes[0].set_title("Ground Truth (Red=Anomaly)")
-    sns.scatterplot(x=embedding[:,0], y=embedding[:,1], hue=y_p_viz, palette={1: 'blue', -1: 'red'}, ax=axes[1], s=15, alpha=0.6)
-    axes[1].set_title("Prediction (Red=Anomaly)")
-    plt.tight_layout()
-    plt.savefig(save_path)
-    plt.close()
+        for i in range(N_ROUNDS):
+            current_seed = SEEDS[i]
+            print(f"   > Round {i+1}/{N_ROUNDS} (Seed {current_seed})...", end="\r")
+            
+            # 1. Load & Sample Data (Re-sampled every time with new seed)
+            X, y_true, df = load_and_prep_data(exp['file'], exp['feat'], seed=current_seed)
+            if X is None: continue
+
+            # 2. Pipeline (Scaling -> PCA)
+            if exp['scaler'] == "MinMax": scaler = MinMaxScaler()
+            else: scaler = StandardScaler()
+            X = scaler.fit_transform(X)
+            
+            if exp['pca'] is not None:
+                pca = PCA(n_components=exp['pca'])
+                X = pca.fit_transform(X)
+
+            # 3. Run Model
+            n_anom = np.sum(y_true == -1)
+            contam = n_anom / len(y_true)
+            
+            scores = None
+            y_pred = None
+            
+            if exp['model'] == "IsolationForest":
+                model = IsolationForest(contamination=contam, random_state=current_seed)
+                y_pred = model.fit_predict(X)
+                scores = -1 * model.decision_function(X) 
+            elif exp['model'] == "OCSVM":
+                nu_val = min(contam + 0.01, 0.5)
+                model = OneClassSVM(kernel="rbf", gamma='auto', nu=nu_val)
+                y_pred = model.fit_predict(X)
+                scores = -1 * model.decision_function(X)
+            else: # HDBSCAN
+                model = HDBSCAN(min_cluster_size=10)
+                model.fit(X)
+                y_pred_raw = model.labels_
+                y_pred = np.where(y_pred_raw == -1, -1, 1)
+                scores = 1 - model.probabilities_
+
+            # 4. Log Metrics for this Round
+            y_binary = (y_true == -1).astype(int)
+            report = classification_report(y_true, y_pred, output_dict=True, zero_division=0)
+            anom_metrics = report.get('-1', {})
+            
+            experiment_scores["AUC"].append(roc_auc_score(y_binary, scores))
+            experiment_scores["AP"].append(average_precision_score(y_binary, scores))
+            experiment_scores["F1"].append(anom_metrics.get('f1-score', 0))
+            experiment_scores["Recall"].append(anom_metrics.get('recall', 0))
+            experiment_scores["Precision"].append(anom_metrics.get('precision', 0))
+            
+            # (Optional) Save the graph only for the first round so we don't get 20 images
+            if i == 0:
+                df['Anomaly_Score'] = scores
+                df['Class'] = df['label'].apply(lambda x: 'Healthy' if x in APPLES else 'Anomaly')
+                df['Pred_Label'] = y_pred
+                plot_score_histogram(df, exp['id'])
+                plot_pr_curve(y_true, scores, exp['id'], average_precision_score(y_binary, scores))
+                plot_confusion_matrix(y_true, y_pred, exp['id'])
+                
+                # Save qualitative error examples (only from run 1)
+                fn_paths = df[(df['label'].isin(ANOMALIES)) & (df['Pred_Label'] == 1)]['image_path'].tolist()
+                if fn_paths: save_image_grid(fn_paths, f"{exp['id']} False Negatives", f"{exp['id']}_FN.png")
+                fp_paths = df[(df['label'].isin(APPLES)) & (df['Pred_Label'] == -1)]['image_path'].tolist()
+                if fp_paths: save_image_grid(fp_paths, f"{exp['id']} False Positives", f"{exp['id']}_FP.png")
+
+        # 5. Aggregate Results after 5 rounds
+        print(f"\n   > Completed {N_ROUNDS} Rounds.")
+        
+        # Calculate Mean and Std for each metric
+        summary = {
+            "Experiment": exp['id'],
+            "AUC_Mean": np.mean(experiment_scores["AUC"]),
+            "AUC_Std": np.std(experiment_scores["AUC"]),
+            "F1_Mean": np.mean(experiment_scores["F1"]),
+            "F1_Std": np.std(experiment_scores["F1"]),
+            "Recall_Mean": np.mean(experiment_scores["Recall"]),
+            "AP_Mean": np.mean(experiment_scores["AP"]),
+        }
+        raw_results.append(summary)
+
+    # --- SAVE FINAL STABILITY REPORT ---
+    results_df = pd.DataFrame(raw_results)
+    csv_path = os.path.join(OUTPUT_DIR, "h3_stability_metrics.csv")
+    results_df.to_csv(csv_path, index=False)
+    
+    print("\n" + "="*60)
+    print(f"STABILITY ANALYSIS COMPLETE. CSV SAVED: {csv_path}")
+    print("="*60)
+    # Print a pretty table of Mean ± Std
+    print(results_df[['Experiment', 'AUC_Mean', 'AUC_Std', 'F1_Mean']])
 
 if __name__ == "__main__":
-    FEATURE_SET_PATH = [
-        "params/feature_set_2.joblib", 
-        "params/feature_set_3.joblib",
-        "params/feature_set_1.joblib",
-        "params/feature_set_4.joblib",
-        "params/feature_set_7.joblib"
-    ]
-    
-    FEAT_COLUMNS = ["lbp_hsv_features", "hog_hsv_features", "all_features"]
-    CONTAMINATION = 0.02 
-    
-    SCALERS = {
-        "MinMax": MinMaxScaler(),
-        "Standard": StandardScaler()
-    }
-    
-    # --- UPDATED: COMPARE VARIANCES ---
-    PCA_VARIANCES = [0.9, 0.95, 0.99] 
-
-    h3_results = []
-
-    print("Starting PCA Variance Testing (95% vs 99%)...")
-
-    for file_path in FEATURE_SET_PATH:
-        if not os.path.exists(file_path):
-            print(f"Skipping {file_path}...")
-            continue
-            
-        print(f"\nLoading {file_path}...")
-        loaded = joblib.load(file_path)
-        data = loaded['data']
-        file_id = os.path.basename(file_path).replace(".joblib", "")
-
-        for feat_col in FEAT_COLUMNS:
-            print(f"  Feature: {feat_col}")
-            
-            # 1. Get Raw Data
-            X_raw, y_true, df_subset = get_data_sample(data, feat_col, contamination=CONTAMINATION)
-            
-            # 2. Loop through Scalers
-            for scaler_name, scaler in SCALERS.items():
-                X_scaled = scaler.fit_transform(X_raw)
-                
-                # 3. Loop through PCA Variances
-                for variance in PCA_VARIANCES:
-                    print(f"      > Scaler: {scaler_name} | PCA Variance: {variance}")
-                    
-                    # Apply PCA
-                    n_feats = X_scaled.shape[1]
-                    if n_feats < 2: 
-                        X_final = X_scaled 
-                        pca_status = f"PCA_Skipped"
-                    else:
-                        pca = PCA(n_components=variance, random_state=42)
-                        X_final = pca.fit_transform(X_scaled)
-                        pca_status = f"PCA_{variance}"
-                        print(f"        -> Reduced dims: {n_feats} -> {X_final.shape[1]}")
-
-                    # --- MODEL 1: ISOLATION FOREST ---
-                    iso = IsolationForest(contamination=CONTAMINATION, random_state=42, n_jobs=-1)
-                    y_pred_iso = iso.fit_predict(X_final)
-                    
-                    report_iso = classification_report(y_true, y_pred_iso, output_dict=True, zero_division=0)
-                    
-                    # ID and Save
-                    exp_id = f"{file_id}_{feat_col}_{scaler_name}_{pca_status}"
-                    base_name = os.path.join(RESULTS_DIR, f"{exp_id}_ISO")
-                    
-                    # Visuals
-                    plot_umap_anomalies(X_final, y_true, y_pred_iso, f"{base_name}_UMAP.png")
-                    visualize_predictions(y_true, y_pred_iso, df_subset, f"ISO {pca_status}", base_name)
-                    
-                    h3_results.append({
-                        "ParamSet": file_id,
-                        "Feature": feat_col,
-                        "Scaler": scaler_name,
-                        "PCA_Var": variance,
-                        "Model": "Isolation Forest",
-                        "Dims_Retained": X_final.shape[1],
-                        "F1_Anomaly": report_iso.get('-1', {}).get('f1-score', 0),
-                        "Recall_Anomaly": report_iso.get('-1', {}).get('recall', 0),
-                        "Precision_Anomaly": report_iso.get('-1', {}).get('precision', 0),
-                    })
-
-                    # --- MODEL 2: HDBSCAN ---
-                    try:
-                        hdb = HDBSCAN(min_cluster_size=2, min_samples=5)
-                        y_pred_hdb_raw = hdb.fit_predict(X_final)
-                        y_pred_hdb = np.where(y_pred_hdb_raw == -1, -1, 1)
-                        
-                        report_hdb = classification_report(y_true, y_pred_hdb, output_dict=True, zero_division=0)
-                        
-                        base_name_hdb = os.path.join(RESULTS_DIR, f"{exp_id}_HDB")
-                        plot_umap_anomalies(X_final, y_true, y_pred_hdb, f"{base_name_hdb}_UMAP.png")
-                        visualize_predictions(y_true, y_pred_hdb, df_subset, f"HDB {pca_status}", base_name_hdb)
-
-                        h3_results.append({
-                            "ParamSet": file_id,
-                            "Feature": feat_col,
-                            "Scaler": scaler_name,
-                            "PCA_Var": variance,
-                            "Model": "HDBSCAN",
-                            "Dims_Retained": X_final.shape[1],
-                            "F1_Anomaly": report_hdb.get('-1', {}).get('f1-score', 0),
-                            "Recall_Anomaly": report_hdb.get('-1', {}).get('recall', 0),
-                            "Precision_Anomaly": report_hdb.get('-1', {}).get('precision', 0),
-                        })
-                    except Exception as e:
-                        print(f"HDBSCAN Failed for {exp_id}: {e}")
-
-    res_df = pd.DataFrame(h3_results)
-    res_df.to_csv(os.path.join(RESULTS_DIR, "pca_variance_metrics.csv"), index=False)
-    print("\n--- PCA Variance Testing Complete ---")
+    run_experiments()
