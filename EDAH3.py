@@ -29,7 +29,7 @@ APPLES = [
 ]
 ANOMALIES = ["Apple Core 1", "Apple hit 1", "Apple Rotten 1"] 
 
-OUTPUT_DIR = "h3_comprehensive_analysis_v2/"
+OUTPUT_DIR = "h3_comprehensive_analysis_v3/"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # DEFINE YOUR EXPERIMENTS HERE
@@ -46,33 +46,33 @@ EXPERIMENTS = [
     
     # 2. Baseline Edited (Set 7)
     {
-        "id": "Exp2_Baseline_Edited",
-        "file": "params/feature_set_7.joblib",
-        "feat": "hog_hsv_features",
+        "id": "Exp2_Edited",
+        "file": "params/feature_set_1.joblib",
+        "feat": "all_features",
         "scaler": "MinMax",
         "pca": 0.95, 
         "model": "IsolationForest"
     },
 
-    # 3. HDBSCAN (Set 1)
+    # 2. Baseline Edited (Set 7)
     {
-        "id": "Exp3_HDBSCAN",
+        "id": "Exp3_Edited",
         "file": "params/feature_set_1.joblib",
         "feat": "hog_hsv_features",
         "scaler": "MinMax",
-        "pca": 0.95,
-        "model": "HDBSCAN"
+        "pca": 0.97, 
+        "model": "IsolationForest"
     }, 
 
-    # 4. HDBSCAN (Set 7)
+    # 2. Baseline Edited (Set 7)
     {
-        "id": "Exp4_HDBSCAN_edited",
-        "file": "params/feature_set_7.joblib",
+        "id": "Exp4_Edited",
+        "file": "params/feature_set_1.joblib",
         "feat": "hog_hsv_features",
         "scaler": "MinMax",
-        "pca": 0.95,
-        "model": "HDBSCAN"
-    }
+        "pca": 0.90, 
+        "model": "IsolationForest"
+    },
 ]
 
 # =============================================================================
@@ -89,11 +89,11 @@ def load_and_prep_data(file_path, feature_col, seed=42):
     
     # Randomly sample healthy data (Bootstrapping) using the specific SEED
     # This ensures each "Round" of CV gets a different subset of healthy apples
-    healthy = data[data['label'].isin(APPLES)].sample(10000, random_state=seed)
+    healthy = data[data['label'].isin(APPLES)].sample(min(int(len(data[data['label'].isin(APPLES)])), 20000), random_state=seed)
     
     # Take ALL anomalies (or sample a subset if you want to vary that too)
     # Here we keep anomalies consistent but vary the 'Healthy' background noise
-    anom = data[data['label'].isin(ANOMALIES)].sample(int(len(healthy) * .05), random_state=seed)
+    anom = data[data['label'].isin(ANOMALIES)].sample(min(int(len(healthy) * .05), len(data[data['label'].isin(ANOMALIES)])), random_state=seed)
     
     df = pd.concat([healthy, anom]).reset_index(drop=True)
     
