@@ -225,7 +225,7 @@ def run_experiments():
             y_pred = None
             
             if exp['model'] == "IsolationForest":
-                model = IsolationForest(contamination=contam, random_state=current_seed)
+                model = IsolationForest(n_estimators=100, contamination='auto', random_state=current_seed)
                 y_pred = model.fit_predict(X)
                 scores = -1 * model.decision_function(X) 
             elif exp['model'] == "OCSVM":
