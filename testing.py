@@ -354,7 +354,7 @@ def run_pipeline():
                 # Determine Threshold from TRAINING data (No Peeking!)
                 # We assume the top 1% of training scores might be noise/outliers
                 train_scores = -1 * model.decision_function(X_train_p)
-                threshold = np.percentile(train_scores, 99
+                threshold = np.percentile(train_scores, 92
                                           ) 
                 
                 y_pred = (test_scores > threshold).astype(int)
