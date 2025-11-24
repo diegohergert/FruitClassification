@@ -59,28 +59,28 @@ def get_configs():
     configs = []
     # 0. Baseline
     configs.append({
-        "name": "Baseline_v3",
+        "name": "Baseline_v4.1",
         "hsv_bins": (8, 8, 8),
         "lbp_p": 24, "lbp_r": 2,
         "hog_orient": 12, "hog_cell": (8, 8)
     })
     # 1. Detail (Texture focused)
     configs.append({
-        "name": "Config_Detail_v3",
+        "name": "Config_v4.2",
         "hsv_bins": (8, 8, 8),
         "lbp_p": 24, "lbp_r": 2, 
         "hog_orient": 12, "hog_cell": (10, 10)
     })
     # 2. Broad (Shape focused)
     configs.append({
-        "name": "Config_Broad_v3",
+        "name": "Config_v4.3",
         "hsv_bins": (8, 8, 8),
         "lbp_p": 24, "lbp_r": 2, 
         "hog_orient": 12, "hog_cell": (12, 12)
     })
 
     configs.append({
-        "name": "Config_Broad_v3",
+        "name": "Config_v4.4",
         "hsv_bins": (8, 8, 8),
         "lbp_p": 28, "lbp_r": 2, 
         "hog_orient": 12, "hog_cell": (12, 12)
