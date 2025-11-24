@@ -29,7 +29,7 @@ from sklearn.metrics import (
 #   1. CONFIGURATION
 # =============================================================================
 
-OUTPUT_DIR = "h3_memory_optimized_results/v3/"
+OUTPUT_DIR = "h3_memory_optimized_results/v4/"
 CACHE_DIR = "paramsv2/" # We will save separate files here
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(CACHE_DIR, exist_ok=True)
@@ -266,7 +266,7 @@ def plot_score_distribution(y_test, test_scores, title, filename):
     plt.savefig(os.path.join(OUTPUT_DIR, filename))
     plt.close()
 
-def precision_at_k(y_true, scores, k=50):
+def precision_at_k(y_true, scores, k=100):
     # Sort by score (descending)
     ranked_indices = np.argsort(scores)[::-1]
     top_k_indices = ranked_indices[:k]
@@ -291,8 +291,8 @@ def run_pipeline():
             exp_id = f"{cfg['name']}_{scaler_name}"
             print(f"   > Running Experiment: {exp_id}")
             
-            # Initialize Log (Added P@50)
-            metrics_log = {"AP": [], "F1": [], "Recall": [], "ROC": [], "P@50": []}
+            # Initialize Log (Added P@100)
+            metrics_log = {"AP": [], "F1": [], "Recall": [], "ROC": [], "P@100": []}
             
             # 3. Stability Loop
             for seed in [67, 69, 123, 420, 42]:
@@ -333,7 +333,7 @@ def run_pipeline():
                 # 1. Safe "Curve" Metrics (Independent of threshold)
                 ap = average_precision_score(y_test, test_scores)
                 roc = roc_auc_score(y_test, test_scores)
-                p_at_50 = precision_at_k(y_test, test_scores, k=50)
+                p_at_100 = precision_at_k(y_test, test_scores, k=100)
                 
                 # 2. Safe "Hard" Metrics (F1 / Recall)
                 # Determine Threshold from TRAINING data (No Peeking!)
@@ -346,7 +346,7 @@ def run_pipeline():
                 # Log them
                 metrics_log['AP'].append(ap)
                 metrics_log['ROC'].append(roc)
-                metrics_log['P@50'].append(p_at_50)
+                metrics_log['P@100'].append(p_at_100)
                 metrics_log['F1'].append(f1_score(y_test, y_pred))
                 metrics_log['Recall'].append(recall_score(y_test, y_pred))
                 
@@ -374,10 +374,10 @@ def run_pipeline():
                 "AP_Mean": np.mean(metrics_log['AP']),
                 "ROC_Mean": np.mean(metrics_log['ROC']),
                 "F1_Mean": np.mean(metrics_log['F1']),
-                "P@50_Mean": np.mean(metrics_log['P@50']) # Fixed this key
+                "P@100_Mean": np.mean(metrics_log['P@100']) # Fixed this key
             }
             results.append(res)
-            print(f"   > Avg AP: {res['AP_Mean']:.4f} | P@50: {res['P@50_Mean']:.4f}")
+            print(f"   > Avg AP: {res['AP_Mean']:.4f} | P@100: {res['P@100_Mean']:.4f}")
         
         # --- MEMORY CLEANUP ---
         del curr_df
