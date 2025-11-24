@@ -1,0 +1,58 @@
+Category,Subclass,Count,Type
+Healthy Apples,Apple 5,586,Healthy
+Healthy Apples,Apple 10,930,Healthy
+Healthy Apples,Apple 11,572,Healthy
+Healthy Apples,Apple 14,620,Healthy
+Healthy Apples,Apple 17,811,Healthy
+Healthy Apples,Apple 18,644,Healthy
+Healthy Apples,Apple Braeburn 1,656,Healthy
+Healthy Apples,Apple Crimson Snow 1,592,Healthy
+Healthy Apples,Apple Golden 2,656,Healthy
+Healthy Apples,Apple Golden 3,642,Healthy
+Healthy Apples,Apple Granny Smith 1,656,Healthy
+Healthy Apples,Apple Pink Lady 1,608,Healthy
+Healthy Apples,Apple Red 1,656,Healthy
+Healthy Apples,Apple Red 2,656,Healthy
+Healthy Apples,Apple Red 3,573,Healthy
+Healthy Apples,Apple Red Delicious 1,656,Healthy
+Healthy Apples,Apple Red Yellow 1,656,Healthy
+Healthy Others,Peach 1,656,Healthy
+Healthy Others,Peach 2,984,Healthy
+Healthy Others,Peach Flat 1,656,Healthy
+Healthy Others,Pear 1,656,Healthy
+Healthy Others,Pear 2,928,Healthy
+Healthy Others,Pear 5,937,Healthy
+Healthy Others,Pear Monster 1,656,Healthy
+Healthy Others,Pear Red 1,888,Healthy
+Healthy Others,Pear Williams 1,656,Healthy
+Healthy Others,Tomato 1,984,Healthy
+Healthy Others,Tomato 2,897,Healthy
+Healthy Others,Tomato 3,984,Healthy
+Healthy Others,Tomato 4,639,Healthy
+Healthy Others,Tomato 5,891,Healthy
+Healthy Others,tomato 7,931,Healthy
+Healthy Others,Tomato 10,919,Healthy
+Healthy Others,Tomato Cherry Maroon 1,402,Healthy
+Healthy Others,Tomato Cherry Orange 1,402,Healthy
+Healthy Others,Tomato Cherry Red 1,656,Healthy
+Healthy Others,Tomato Cherry Red 2,402,Healthy
+Healthy Others,Tomato Cherry Yellow 1,403,Healthy
+Healthy Others,Tomato Heart 1,912,Healthy
+Healthy Others,Tomato Yellow 1,612,Healthy
+Healthy Bananas,Banana 1,656,Healthy
+Healthy Bananas,Banana 3,310,Healthy
+Healthy Bananas,Banana 4,338,Healthy
+Healthy Bananas,Banana Lady Finger 1,602,Healthy
+Apple Anomalies,Apple Core 1,313,Anomaly
+Apple Anomalies,Apple hit 1,936,Anomaly
+Apple Anomalies,Apple Rotten 1,650,Anomaly
+Other Anomalies,Peach 3,1233,Anomaly
+Other Anomalies,Peach 4,960,Anomaly
+Other Anomalies,Peach 5,960,Anomaly
+Other Anomalies,Peach 6,951,Anomaly
+Other Anomalies,Pear 3,287,Anomaly
+Other Anomalies,Pear 6,941,Anomaly
+Other Anomalies,Pear 7,944,Anomaly
+Other Anomalies,Pear 8,933,Anomaly
+Other Anomalies,Pear 12,625,Anomaly
+Other Anomalies,Tomato not Ripen 1,632,Anomaly

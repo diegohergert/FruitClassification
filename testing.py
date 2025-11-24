@@ -29,7 +29,7 @@ from sklearn.metrics import (
 #   1. CONFIGURATION
 # =============================================================================
 
-OUTPUT_DIR = "h3_memory_optimized_results/v6/"
+OUTPUT_DIR = "h3_memory_optimized_results/v7/"
 CACHE_DIR = "paramsv2/" # We will save separate files here
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(CACHE_DIR, exist_ok=True)
@@ -44,9 +44,23 @@ APPLES = [
     "Apple 18", "Apple Braeburn 1", "Apple Crimson Snow 1", 
     "Apple Golden 2", "Apple Golden 3", "Apple Granny Smith 1", 
     "Apple Pink Lady 1", "Apple Red 1", "Apple Red 2", "Apple Red 3", 
-    "Apple Red Delicious 1", "Apple Red Yellow 1"
+    "Apple Red Delicious 1", "Apple Red Yellow 1", 
+
+    "Peach 1", "Peach 2", "Peach Flat 1",
+
+    "Pear 1", "Pear 2", "Pear 5", "Pear Forrelle 1", "Pear Monster 1", "Pear Red 1", "Pear Williams 1",
+
+    "Tomato 1", "Tomato 2", "Tomato 3", "Tomato 4", "Tomato 5", "tomato 7", "Tomato 10", "Tomato Cherry Maroon 1", "Tomato Cherry Orange 1", "Tomato Cherry Red 1",
+    "Tomato Cherry Red 2", "Tomato Cherry Yellow 1", "Tomato Heart 1", "Tomato Yellow 1"
 ]
-ANOMALIES = ["Apple Core 1", "Apple hit 1", "Apple Rotten 1"]
+ANOMALIES = ["Apple Core 1", "Apple hit 1", "Apple Rotten 1",
+             
+             "Peach 3", "Peach 4", "Peach 5", "Peach 6",
+             
+             "Pear 3", "Pear 6", "Pear 7", "Pear 8", "Pear 12",
+             
+             "Tomato not Ripen 1"
+             ]
 
 IMG_SIZE = (100, 100)
 SCALERS_TO_TEST = ["MinMax"]
@@ -57,29 +71,32 @@ SCALERS_TO_TEST = ["MinMax"]
 
 def get_configs():
     configs = []
+    """
     configs.append({
-        "name": "Config_v8",
-        "hsv_bins": (16, 16, 16),
-        "lbp_p": 24, "lbp_r": 2, 
+        "name": "Config_v20",
+        "hsv_bins": (24, 24, 24),
+        "lbp_p": 28, "lbp_r": 1, 
         "hog_orient": 12, "hog_cell": (12, 12)
     })
 
     configs.append({
-        "name": "Config_v11",
+        "name": "Config_v21",
         "hsv_bins": (16, 16, 16),
         "lbp_p": 28, "lbp_r": 2, 
         "hog_orient": 12, "hog_cell": (12, 12)
     })
 
     configs.append({
-        "name": "Config_v10",
-        "hsv_bins": (12, 12, 12),
+        "name": "Config_v22",
+        "hsv_bins": (30, 30, 30),
         "lbp_p": 24, "lbp_r": 2, 
         "hog_orient": 12, "hog_cell": (12, 12)
     })
-
+    # I manually tested these with the previous best config, and some other extra (not shown here)
+    I ended up having similar params for just apples as all fruits
+    """ 
     configs.append({
-        "name": "Config_v12",
+        "name": "Config_v23",
         "hsv_bins": (24, 24, 24),
         "lbp_p": 24, "lbp_r": 2, 
         "hog_orient": 12, "hog_cell": (12, 12)
@@ -337,7 +354,8 @@ def run_pipeline():
                 # Determine Threshold from TRAINING data (No Peeking!)
                 # We assume the top 1% of training scores might be noise/outliers
                 train_scores = -1 * model.decision_function(X_train_p)
-                threshold = np.percentile(train_scores, 99) 
+                threshold = np.percentile(train_scores, 99
+                                          ) 
                 
                 y_pred = (test_scores > threshold).astype(int)
                 
