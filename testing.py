@@ -29,7 +29,7 @@ from sklearn.metrics import (
 #   1. CONFIGURATION
 # =============================================================================
 
-OUTPUT_DIR = "h3_memory_optimized_results/v4/"
+OUTPUT_DIR = "h3_memory_optimized_results/v6/"
 CACHE_DIR = "paramsv2/" # We will save separate files here
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(CACHE_DIR, exist_ok=True)
@@ -49,7 +49,7 @@ APPLES = [
 ANOMALIES = ["Apple Core 1", "Apple hit 1", "Apple Rotten 1"]
 
 IMG_SIZE = (100, 100)
-SCALERS_TO_TEST = ["MinMax", "Standard"]
+SCALERS_TO_TEST = ["MinMax"]
 
 # =============================================================================
 #   2. CONFIG DEFINITIONS
@@ -57,47 +57,32 @@ SCALERS_TO_TEST = ["MinMax", "Standard"]
 
 def get_configs():
     configs = []
-    # 0. Baseline
     configs.append({
-        "name": "Baseline_v3",
-        "hsv_bins": (8, 8, 8),
-        "lbp_p": 24, "lbp_r": 2,
-        "hog_orient": 12, "hog_cell": (8, 8)
-    })
-    # 1. Detail (Texture focused)
-    configs.append({
-        "name": "Config_Detail_v3",
-        "hsv_bins": (8, 8, 8),
-        "lbp_p": 24, "lbp_r": 2, 
-        "hog_orient": 12, "hog_cell": (10, 10)
-    })
-    # 2. Broad (Shape focused)
-    configs.append({
-        "name": "Config_v3",
-        "hsv_bins": (8, 8, 8),
+        "name": "Config_v8",
+        "hsv_bins": (16, 16, 16),
         "lbp_p": 24, "lbp_r": 2, 
         "hog_orient": 12, "hog_cell": (12, 12)
     })
 
     configs.append({
-        "name": "Config_v5",
-        "hsv_bins": (12, 12, 12),
+        "name": "Config_v11",
+        "hsv_bins": (16, 16, 16),
         "lbp_p": 28, "lbp_r": 2, 
         "hog_orient": 12, "hog_cell": (12, 12)
     })
-    
+
     configs.append({
-        "name": "Config_v7",
-        "hsv_bins": (8, 8, 8),
-        "lbp_p": 30, "lbp_r": 2, 
+        "name": "Config_v10",
+        "hsv_bins": (12, 12, 12),
+        "lbp_p": 24, "lbp_r": 2, 
         "hog_orient": 12, "hog_cell": (12, 12)
     })
 
     configs.append({
-        "name": "Config_v6",
-        "hsv_bins": (8, 8, 8),
-        "lbp_p": 28, "lbp_r": 4, 
-        "hog_orient": 9, "hog_cell": (12, 12)
+        "name": "Config_v12",
+        "hsv_bins": (24, 24, 24),
+        "lbp_p": 24, "lbp_r": 2, 
+        "hog_orient": 12, "hog_cell": (12, 12)
     })
     return configs
 CONFIGS = get_configs()
