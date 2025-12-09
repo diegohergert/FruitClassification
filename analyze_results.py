@@ -34,7 +34,6 @@ def create_clean_table():
     tbl.scale(1.2, 1.8)
 
     # Style the Cells
-    # Note: With ax.table, row 0 is the header, data starts at row 1
     for (row, col), cell in tbl.get_celld().items():
         if row == 0:
             # Header Styling

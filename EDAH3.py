@@ -15,11 +15,9 @@ from sklearn.svm import OneClassSVM
 from sklearn.cluster import HDBSCAN
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classification_report, roc_auc_score, precision_recall_curve, average_precision_score
 
-# =============================================================================
-#   1. CONFIGURATION & EXPERIMENT SETUP
-# =============================================================================
+#configs and setup
 
-# The "Strict" Cleaned Lists
+# folders I labeled as healthy apples
 APPLES = [
     "Apple 5", "Apple 10", "Apple 11", "Apple 14", "Apple 17",  
     "Apple 18", "Apple Braeburn 1", "Apple Crimson Snow 1", 
@@ -32,7 +30,6 @@ ANOMALIES = ["Apple Core 1", "Apple hit 1", "Apple Rotten 1"]
 OUTPUT_DIR = "h3_comprehensive_analysis_v3/"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# DEFINE YOUR EXPERIMENTS HERE
 EXPERIMENTS = [
     # 1. BASELINE: Isolation Forest with PCA
     {
@@ -75,9 +72,7 @@ EXPERIMENTS = [
     },
 ]
 
-# =============================================================================
-#   2. DATA LOADING & UTILS
-# =============================================================================
+#data loading
 
 def load_and_prep_data(file_path, feature_col, seed=42):
     if not os.path.exists(file_path):
@@ -87,17 +82,16 @@ def load_and_prep_data(file_path, feature_col, seed=42):
     loaded = joblib.load(file_path)
     data = loaded['data']
     
-    # Randomly sample healthy data (Bootstrapping) using the specific SEED
+    # Randomly sample healthy data
     # This ensures each "Round" of CV gets a different subset of healthy apples
     healthy = data[data['label'].isin(APPLES)].sample(min(int(len(data[data['label'].isin(APPLES)])), 20000), random_state=seed)
     
     # Take ALL anomalies (or sample a subset if you want to vary that too)
-    # Here we keep anomalies consistent but vary the 'Healthy' background noise
     anom = data[data['label'].isin(ANOMALIES)].sample(min(int(len(healthy) * .05), len(data[data['label'].isin(ANOMALIES)])), random_state=seed)
     
     df = pd.concat([healthy, anom]).reset_index(drop=True)
     
-    # Labels: 1 = Healthy, -1 = Anomaly (Standard Sklearn notation)
+    # Labels: 1 = Healthy, -1 = Anomaly 
     y_true = df['label'].apply(lambda x: 1 if x in APPLES else -1).values
     
     # Extract Features
@@ -140,9 +134,7 @@ def save_image_grid(image_paths, title, filename, n=16):
     plt.savefig(os.path.join(OUTPUT_DIR, filename))
     plt.close()
 
-# =============================================================================
-#   3. VISUALIZATION FUNCTIONS
-# =============================================================================
+#3 visualization functions
 
 def plot_score_histogram(df, exp_name):
     """Plots the distribution of Healthy vs Anomaly scores."""
@@ -179,18 +171,15 @@ def plot_confusion_matrix(y_true, y_pred, exp_name):
     plt.savefig(os.path.join(OUTPUT_DIR, f"{exp_name}_CM.png"))
     plt.close()
 
-# =============================================================================
-#   4. MAIN PIPELINE WITH STABILITY CROSS-VALIDATION
-# =============================================================================
+#   main pipeline
 
 def run_experiments():
     print(f"Starting H3 Analysis with Stability Testing. Results will be in: {OUTPUT_DIR}")
     
-    # Configuration for Cross-Validation
+    #Cross-Validation
     N_ROUNDS = 5  # How many times to repeat the experiment
     SEEDS = [42, 101, 999, 123, 555] # Different random states for each round
     
-    # Store every single run to calculate stats later
     raw_results = [] 
     
     for exp in EXPERIMENTS:
@@ -204,7 +193,7 @@ def run_experiments():
             current_seed = SEEDS[i]
             print(f"   > Round {i+1}/{N_ROUNDS} (Seed {current_seed})...", end="\r")
             
-            # 1. Load & Sample Data (Re-sampled every time with new seed)
+            # 1. Load & Sample Data
             X, y_true, df = load_and_prep_data(exp['file'], exp['feat'], seed=current_seed)
             if X is None: continue
 
@@ -251,7 +240,7 @@ def run_experiments():
             experiment_scores["Recall"].append(anom_metrics.get('recall', 0))
             experiment_scores["Precision"].append(anom_metrics.get('precision', 0))
             
-            # (Optional) Save the graph only for the first round so we don't get 20 images
+            # Save the graph only for the first round so we don't get 20 images
             if i == 0:
                 df['Anomaly_Score'] = scores
                 df['Class'] = df['label'].apply(lambda x: 'Healthy' if x in APPLES else 'Anomaly')
@@ -281,7 +270,7 @@ def run_experiments():
         }
         raw_results.append(summary)
 
-    # --- SAVE FINAL STABILITY REPORT ---
+    # final report
     results_df = pd.DataFrame(raw_results)
     csv_path = os.path.join(OUTPUT_DIR, "h3_stability_metrics.csv")
     results_df.to_csv(csv_path, index=False)
@@ -289,7 +278,7 @@ def run_experiments():
     print("\n" + "="*60)
     print(f"STABILITY ANALYSIS COMPLETE. CSV SAVED: {csv_path}")
     print("="*60)
-    # Print a pretty table of Mean ± Std
+    # table print
     print(results_df[['Experiment', 'AUC_Mean', 'AUC_Std', 'F1_Mean']])
 
 if __name__ == "__main__":
